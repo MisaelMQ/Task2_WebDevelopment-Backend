@@ -8,7 +8,14 @@ class Settings(BaseSettings):
     app_name: str = "BCP Tablero NPS API"
     app_version: str = "0.1.0"
     api_v1_prefix: str = "/api/v1"
-    duckdb_path: Path = Path("data/sharepoint_lists.duckdb")
+
+    duckdb_path: Path = Path(
+        "data/sharepoint_lists.duckdb"
+    )
+
+    app_duckdb_path: Path = Path(
+        "data/application.duckdb"
+    )
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -17,14 +24,23 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @staticmethod
+    def resolve_path(path: Path) -> Path:
+        expanded_path = path.expanduser()
+
+        if expanded_path.is_absolute():
+            return expanded_path.resolve()
+
+        return (BASE_DIR / expanded_path).resolve()
+
     @property
     def resolved_duckdb_path(self) -> Path:
-        path = self.duckdb_path.expanduser()
+        return self.resolve_path(self.duckdb_path)
 
-        if path.is_absolute():
-            return path.resolve()
+    @property
+    def resolved_app_duckdb_path(self) -> Path:
+        return self.resolve_path(self.app_duckdb_path)
 
-        return (BASE_DIR / path).resolve()
 
 @lru_cache
 def get_settings() -> Settings:
