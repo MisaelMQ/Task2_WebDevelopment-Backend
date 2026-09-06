@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from app.api.routes.health import router as health_router
 from app.api.routes.responses import router as responses_router
 from app.api.routes.sources import router as sources_router
+from app.api.routes.channels import router as channels_router
 from app.core.config import get_settings
 from app.db.application import initialize_application_database
 
@@ -36,6 +37,11 @@ app.include_router(
 
 app.include_router(
     responses_router,
+    prefix=settings.api_v1_prefix,
+)
+
+app.include_router(
+    channels_router,
     prefix=settings.api_v1_prefix,
 )
 
