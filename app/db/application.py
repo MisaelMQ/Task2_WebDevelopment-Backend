@@ -36,44 +36,108 @@ def initialize_application_database() -> None:
     connection = open_application_database()
 
     try:
-        connection.execute(
-            """
-            CREATE SEQUENCE IF NOT EXISTS
-                canales_id_seq
-            START 1
-            """
-        )
-
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS canales (
-                id BIGINT PRIMARY KEY
-                    DEFAULT nextval('canales_id_seq'),
-
-                codigo VARCHAR NOT NULL UNIQUE,
-                nombre VARCHAR NOT NULL,
-
-                fuente VARCHAR NOT NULL
-                    CHECK (
-                        fuente IN (
-                            'Agente IA',
-                            'CleverTap',
-                            'Encuesta QR'
-                        )
-                    ),
-
-                activo BOOLEAN NOT NULL
-                    DEFAULT TRUE,
-
-                descripcion VARCHAR,
-
-                created_at TIMESTAMP NOT NULL
-                    DEFAULT CURRENT_TIMESTAMP,
-
-                updated_at TIMESTAMP NOT NULL
-                    DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
+        create_channels_schema(connection)
+        create_surveys_schema(connection)
     finally:
         connection.close()
+
+
+def create_channels_schema(
+    connection: DuckDBPyConnection,
+) -> None:
+    connection.execute(
+        """
+        CREATE SEQUENCE IF NOT EXISTS
+            canales_id_seq
+        START 1
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS canales (
+            id BIGINT PRIMARY KEY
+                DEFAULT nextval('canales_id_seq'),
+
+            codigo VARCHAR NOT NULL UNIQUE,
+            nombre VARCHAR NOT NULL,
+
+            fuente VARCHAR NOT NULL
+                CHECK (
+                    fuente IN (
+                        'Agente IA',
+                        'CleverTap',
+                        'Encuesta QR'
+                    )
+                ),
+
+            activo BOOLEAN NOT NULL
+                DEFAULT TRUE,
+
+            descripcion VARCHAR,
+
+            created_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP,
+
+            updated_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+
+def create_surveys_schema(
+    connection: DuckDBPyConnection,
+) -> None:
+    connection.execute(
+        """
+        CREATE SEQUENCE IF NOT EXISTS
+            encuestas_id_seq
+        START 1
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS encuestas (
+            id BIGINT PRIMARY KEY
+                DEFAULT nextval('encuestas_id_seq'),
+
+            canal_id BIGINT NOT NULL
+                REFERENCES canales(id),
+
+            fecha_encuesta DATE NOT NULL,
+
+            puntuacion_nps INTEGER NOT NULL
+                CHECK (
+                    puntuacion_nps BETWEEN 0 AND 10
+                ),
+
+            categoria_nps VARCHAR NOT NULL
+                CHECK (
+                    categoria_nps IN (
+                        'Detractor',
+                        'Pasivo',
+                        'Promotor'
+                    )
+                ),
+
+            comentario VARCHAR,
+
+            estado VARCHAR NOT NULL
+                DEFAULT 'Pendiente'
+                CHECK (
+                    estado IN (
+                        'Pendiente',
+                        'Revisada'
+                    )
+                ),
+
+            created_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP,
+
+            updated_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
