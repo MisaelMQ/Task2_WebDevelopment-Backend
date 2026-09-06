@@ -285,3 +285,18 @@ def delete_survey(
     ).fetchone()
 
     return deleted_row is not None
+
+def count_surveys_by_channel(
+    connection: DuckDBPyConnection,
+    channel_id: int,
+) -> int:
+    result = connection.execute(
+        """
+        SELECT COUNT(*)
+        FROM encuestas
+        WHERE canal_id = ?
+        """,
+        [channel_id],
+    ).fetchone()
+
+    return int(result[0])

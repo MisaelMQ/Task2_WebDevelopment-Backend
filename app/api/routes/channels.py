@@ -31,6 +31,10 @@ from app.schemas.channel import (
     PaginatedChannels,
 )
 
+from app.repositories.surveys_repository import (
+    count_surveys_by_channel,
+)
+
 router = APIRouter(
     prefix="/canales",
     tags=["Canales"],
@@ -217,6 +221,22 @@ def remove_channel(
     ],
     connection: ApplicationDatabase,
 ) -> Response:
+    associated_surveys = count_surveys_by_channel(
+        connection,
+        channel_id,
+    )
+
+    if associated_surveys > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"No se puede eliminar el canal "
+                f"{channel_id} porque tiene "
+                f"{associated_surveys} encuesta(s) "
+                f"asociada(s)."
+            ),
+        )
+
     deleted = delete_channel_record(
         connection,
         channel_id,
