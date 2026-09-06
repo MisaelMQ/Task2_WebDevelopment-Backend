@@ -13,6 +13,7 @@ from fastapi import (
 
 from app.core.sources import get_source_config
 from app.db.connection import get_database
+from app.api.dependencies.auth import get_current_user
 from app.repositories.responses_repository import (
     ResponseFilters,
     count_responses,
@@ -28,6 +29,7 @@ from app.schemas.response import (
 router = APIRouter(
     prefix="/respuestas",
     tags=["Respuestas"],
+    dependencies=[Depends(get_current_user)],
 )
 
 DatabaseDependency = Annotated[

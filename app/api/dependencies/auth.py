@@ -93,3 +93,17 @@ CurrentUser = Annotated[
     UserInDatabase,
     Depends(get_current_user),
 ]
+
+def require_admin(current_user: CurrentUser) -> UserInDatabase:
+    if current_user.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para realizar esta operación.",
+        )
+
+    return current_user
+
+AdminUser = Annotated[
+    UserInDatabase,
+    Depends(require_admin),
+]

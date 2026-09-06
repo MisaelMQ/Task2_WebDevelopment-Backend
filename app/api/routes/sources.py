@@ -6,11 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.sources import SOURCES, get_source_config
 from app.db.connection import get_database
 from app.repositories.responses_repository import count_responses
+from app.api.dependencies.auth import get_current_user
 from app.schemas.source import SourceSummary
 
 router = APIRouter(
     prefix="/fuentes",
     tags=["Fuentes"],
+    dependencies=[Depends(get_current_user)],
 )
 
 DatabaseDependency = Annotated[

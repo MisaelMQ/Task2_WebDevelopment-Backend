@@ -1,8 +1,9 @@
 import duckdb
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.config import get_settings
 from app.db.connection import open_database
+from app.api.dependencies.auth import require_admin
 
 router = APIRouter(tags=["Health"])
 
@@ -24,6 +25,7 @@ def health_check() -> dict[str, str]:
 @router.get(
     "/database",
     summary="Verificar la conexión con DuckDB",
+    dependencies=[Depends(require_admin)]
 )
 def database_check() -> dict:
     settings = get_settings()

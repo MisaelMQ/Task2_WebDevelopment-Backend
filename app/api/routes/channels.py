@@ -13,6 +13,7 @@ from fastapi import (
 )
 
 from app.db.application import get_application_database
+from app.api.dependencies.auth import get_current_user, require_admin
 from app.repositories.channels_repository import (
     count_channels,
     create_channel,
@@ -50,6 +51,7 @@ ApplicationDatabase = Annotated[
     "",
     response_model=PaginatedChannels,
     summary="Listar canales",
+    dependencies=[Depends(get_current_user)]
 )
 def get_channels(
     connection: ApplicationDatabase,
@@ -103,6 +105,7 @@ def get_channels(
     "/{channel_id}",
     response_model=ChannelRead,
     summary="Obtener un canal",
+    dependencies=[Depends(get_current_user)]
 )
 def get_channel(
     channel_id: Annotated[
@@ -129,6 +132,7 @@ def get_channel(
     response_model=ChannelRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un canal",
+    dependencies=[Depends(require_admin)],
 )
 def post_channel(
     channel: ChannelCreate,
@@ -161,6 +165,7 @@ def post_channel(
     "/{channel_id}",
     response_model=ChannelRead,
     summary="Actualizar completamente un canal",
+    dependencies=[Depends(require_admin)],
 )
 def put_channel(
     channel_id: Annotated[
@@ -213,6 +218,7 @@ def put_channel(
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Eliminar un canal",
+    dependencies=[Depends(require_admin)],
 )
 def remove_channel(
     channel_id: Annotated[

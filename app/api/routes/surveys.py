@@ -15,6 +15,7 @@ from fastapi import (
 
 from app.core.nps import NpsCategory
 from app.db.application import get_application_database
+from app.api.dependencies.auth import get_current_user, require_admin
 from app.repositories.channels_repository import (
     get_channel_by_id,
 )
@@ -49,6 +50,7 @@ ApplicationDatabase = Annotated[
     "",
     response_model=PaginatedSurveys,
     summary="Listar encuestas",
+    dependencies=[Depends(get_current_user)]
 )
 def get_surveys(
     connection: ApplicationDatabase,
@@ -139,6 +141,7 @@ def get_surveys(
     "/{survey_id}",
     response_model=SurveyRead,
     summary="Obtener una encuesta",
+    dependencies=[Depends(get_current_user)]
 )
 def get_survey(
     survey_id: Annotated[
@@ -165,6 +168,7 @@ def get_survey(
     response_model=SurveyRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear una encuesta",
+    dependencies=[Depends(require_admin)],
 )
 def post_survey(
     survey: SurveyCreate,
@@ -197,6 +201,7 @@ def post_survey(
     "/{survey_id}",
     response_model=SurveyRead,
     summary="Actualizar completamente una encuesta",
+    dependencies=[Depends(require_admin)]
 )
 def put_survey(
     survey_id: Annotated[
@@ -246,6 +251,7 @@ def put_survey(
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Eliminar una encuesta",
+    dependencies=[Depends(require_admin)]
 )
 def remove_survey(
     survey_id: Annotated[
