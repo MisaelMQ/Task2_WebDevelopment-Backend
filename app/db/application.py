@@ -38,6 +38,7 @@ def initialize_application_database() -> None:
     try:
         create_channels_schema(connection)
         create_surveys_schema(connection)
+        create_users_schema(connection)
     finally:
         connection.close()
 
@@ -132,6 +133,49 @@ def create_surveys_schema(
                         'Revisada'
                     )
                 ),
+
+            created_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP,
+
+            updated_at TIMESTAMP NOT NULL
+                DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+def create_users_schema(
+    connection: DuckDBPyConnection,
+) -> None:
+    connection.execute(
+        """
+        CREATE SEQUENCE IF NOT EXISTS
+            usuarios_id_seq
+        START 1
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id BIGINT PRIMARY KEY
+                DEFAULT nextval('usuarios_id_seq'),
+
+            username VARCHAR NOT NULL UNIQUE,
+
+            password_hash VARCHAR NOT NULL,
+
+            nombre VARCHAR NOT NULL,
+
+            rol VARCHAR NOT NULL
+                CHECK (
+                    rol IN (
+                        'admin',
+                        'lector'
+                    )
+                ),
+
+            activo BOOLEAN NOT NULL
+                DEFAULT TRUE,
 
             created_at TIMESTAMP NOT NULL
                 DEFAULT CURRENT_TIMESTAMP,

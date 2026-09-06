@@ -1,6 +1,12 @@
 from functools import lru_cache
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from pydantic import Field, SecretStr
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+)
+
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -15,6 +21,16 @@ class Settings(BaseSettings):
 
     app_duckdb_path: Path = Path(
         "data/application.duckdb"
+    )
+
+    jwt_secret_key: SecretStr
+
+    jwt_algorithm: str = "HS256"
+
+    access_token_expire_minutes: int = Field(
+        default=60,
+        ge=5,
+        le=1440,
     )
 
     model_config = SettingsConfigDict(
@@ -39,7 +55,9 @@ class Settings(BaseSettings):
 
     @property
     def resolved_app_duckdb_path(self) -> Path:
-        return self.resolve_path(self.app_duckdb_path)
+        return self.resolve_path(
+            self.app_duckdb_path
+        )
 
 
 @lru_cache
