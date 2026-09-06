@@ -167,7 +167,7 @@ def count_responses(
         parameters,
     ).fetchone()
 
-    return int(result[0])
+    return int(result[0]) if result is not None else 0
 
 
 def list_responses(

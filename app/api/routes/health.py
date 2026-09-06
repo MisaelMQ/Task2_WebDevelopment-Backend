@@ -49,9 +49,10 @@ def database_check() -> dict:
         for (table_name,) in table_rows:
             quoted_table = quote_identifier(table_name)
 
-            row_count = connection.execute(
+            count_result = connection.execute(
                 f"SELECT COUNT(*) FROM {quoted_table}"
-            ).fetchone()[0]
+            ).fetchone()
+            row_count = count_result[0] if count_result is not None else 0
 
             tables.append(
                 {

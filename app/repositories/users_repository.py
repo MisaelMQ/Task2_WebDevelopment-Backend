@@ -99,4 +99,7 @@ def create_user(
         ],
     )
 
-    return row_to_dictionary(cursor)
+    created = row_to_dictionary(cursor)
+    if created is None:
+        raise RuntimeError("No se pudo crear el usuario.")
+    return created

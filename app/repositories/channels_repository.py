@@ -65,7 +65,7 @@ def count_channels(
         parameters,
     ).fetchone()
 
-    return int(result[0])
+    return int(result[0]) if result is not None else 0
 
 def build_channel_filters(
     *,
@@ -198,7 +198,10 @@ def create_channel(
         ],
     )
 
-    return row_to_dictionary(cursor)
+    created = row_to_dictionary(cursor)
+    if created is None:
+        raise RuntimeError("No se pudo crear el canal.")
+    return created
 
 def update_channel(
     connection: DuckDBPyConnection,

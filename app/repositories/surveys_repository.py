@@ -131,7 +131,7 @@ def count_surveys(
         parameters,
     ).fetchone()
 
-    return int(result[0])
+    return int(result[0]) if result is not None else 0
 
 def list_surveys(
     connection: DuckDBPyConnection,
@@ -224,10 +224,16 @@ def create_survey(
         ],
     ).fetchone()
 
-    return get_survey_by_id(
+    if created_row is None:
+        raise RuntimeError("No se pudo crear la encuesta.")
+
+    survey_data = get_survey_by_id(
         connection,
         int(created_row[0]),
     )
+    if survey_data is None:
+        raise RuntimeError("No se pudo recuperar la encuesta creada.")
+    return survey_data
 
 def update_survey(
     connection: DuckDBPyConnection,
@@ -299,4 +305,4 @@ def count_surveys_by_channel(
         [channel_id],
     ).fetchone()
 
-    return int(result[0])
+    return int(result[0]) if result is not None else 0
