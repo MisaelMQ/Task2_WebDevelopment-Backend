@@ -2,12 +2,21 @@ from math import ceil
 from typing import Annotated
 
 from duckdb import DuckDBPyConnection
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    status,
+)
 
 from app.core.sources import get_source_config
 from app.db.connection import get_database
 from app.repositories.responses_repository import (
+    ResponseFilters,
     count_responses,
+    get_response_by_id,
     list_responses,
 )
 from app.schemas.response import (
@@ -47,9 +56,49 @@ def get_responses(
         Query(
             ge=1,
             le=100,
-            description="Registros por página.",
+            description="Cantidad de registros por página.",
         ),
     ] = 25,
+    periodo: Annotated[
+        str | None,
+        Query(
+            min_length=1,
+            max_length=20,
+            description="Periodo, por ejemplo Ago.26.",
+        ),
+    ] = None,
+    categoria_nps: Annotated[
+        str | None,
+        Query(
+            min_length=1,
+            max_length=30,
+            description="Promotor, Pasivo o Detractor.",
+        ),
+    ] = None,
+    canal: Annotated[
+        str | None,
+        Query(
+            min_length=1,
+            max_length=100,
+            description="Canal o servicio de la respuesta.",
+        ),
+    ] = None,
+    nps: Annotated[
+        int | None,
+        Query(
+            ge=0,
+            le=10,
+            description="Puntuación NPS entre 0 y 10.",
+        ),
+    ] = None,
+    buscar: Annotated[
+        str | None,
+        Query(
+            min_length=2,
+            max_length=100,
+            description="Texto contenido en el comentario.",
+        ),
+    ] = None,
 ) -> PaginatedResponses:
     source = get_source_config(source_key)
 
@@ -59,7 +108,20 @@ def get_responses(
             detail=f"La fuente '{source_key}' no existe.",
         )
 
-    total = count_responses(connection, source)
+    filters = ResponseFilters(
+        periodo=periodo,
+        categoria_nps=categoria_nps,
+        canal=canal,
+        nps=nps,
+        buscar=buscar,
+    )
+
+    total = count_responses(
+        connection,
+        source,
+        filters=filters,
+    )
+
     offset = (page - 1) * page_size
 
     records = list_responses(
@@ -67,6 +129,7 @@ def get_responses(
         source,
         limit=page_size,
         offset=offset,
+        filters=filters,
     )
 
     return PaginatedResponses(
@@ -81,3 +144,45 @@ def get_responses(
             total_pages=ceil(total / page_size) if total else 0,
         ),
     )
+
+
+@router.get(
+    "/{source_key}/{record_id}",
+    response_model=ResponseSummary,
+    summary="Obtener una respuesta por su identificador",
+)
+def get_response(
+    source_key: str,
+    record_id: Annotated[
+        int,
+        Path(
+            gt=0,
+            description="Identificador del registro en su fuente.",
+        ),
+    ],
+    connection: DatabaseDependency,
+) -> ResponseSummary:
+    source = get_source_config(source_key)
+
+    if source is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"La fuente '{source_key}' no existe.",
+        )
+
+    record = get_response_by_id(
+        connection,
+        source,
+        record_id=record_id,
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"No existe el registro {record_id} "
+                f"en la fuente '{source.key}'."
+            ),
+        )
+
+    return ResponseSummary.model_validate(record)
