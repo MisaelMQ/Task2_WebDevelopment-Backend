@@ -1,22 +1,74 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.auth import router as auth_router
 from app.api.routes.health import router as health_router
+from app.api.routes.responses import router as responses_router
+from app.api.routes.sources import router as sources_router
+from app.api.routes.channels import router as channels_router
+from app.api.routes.surveys import router as surveys_router
+from app.core.config import get_settings
+from app.db.application import initialize_application_database
+
+settings = get_settings()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_application_database()
+    yield
 
 app = FastAPI(
-    title="BCP Tablero NPS API",
-    description="REST API para la consulta y administración de información Encuestas NPS.",
-    version="0.1.0",
+    title=settings.app_name,
+    description=(
+        "REST API para la consulta y administración "
+        "de información NPS."
+    ),
+    version=settings.app_version,
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
+)
+
+app.include_router(
+    auth_router,
+    prefix=settings.api_v1_prefix,
 )
 
 app.include_router(
     health_router,
-    prefix="/api/v1",
+    prefix=settings.api_v1_prefix,
 )
 
+app.include_router(
+    sources_router,
+    prefix=settings.api_v1_prefix,
+)
+
+app.include_router(
+    responses_router,
+    prefix=settings.api_v1_prefix,
+)
+
+app.include_router(
+    channels_router,
+    prefix=settings.api_v1_prefix,
+)
+
+app.include_router(
+    surveys_router,
+    prefix=settings.api_v1_prefix,
+)
 
 @app.get("/", include_in_schema=False)
 def root() -> dict[str, str]:
     return {
-        "message": "BCP Tablero NPS API",
+        "message": settings.app_name,
         "documentation": "/docs",
     }
